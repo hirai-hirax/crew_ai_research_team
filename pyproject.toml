@@ -1,0 +1,10 @@
+[project]
+name = "crew-ai-research-team"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "crewai>=0.165.1",
+    "crewai-tools>=0.62.3",
+]
