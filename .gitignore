@@ -8,6 +8,7 @@ wheels/
 output/
 # Virtual environments
 .venv
-env
 
-python-version
+# environment variables
+.env
+.python-version
