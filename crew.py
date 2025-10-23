@@ -42,3 +42,4 @@ class Research():
             process=Process.sequential,
             verbose=True,
         )
+C
