@@ -4,20 +4,26 @@ from crewai_tools import SerperDevTool
 
 
 @CrewBase
-class Research():
+class Research:
     """Research crew"""
+
     agents_config = 'config/agents.yaml'
     tasks_config = 'config/tasks.yaml'
 
-
     @agent
     def researcher(self) -> Agent:
-        return Agent(config=self.agents_config['researcher'], verbose=True, tools=[SerperDevTool()])
+        return Agent(
+            config=self.agents_config['researcher'],
+            verbose=True,
+            tools=[SerperDevTool()],
+        )
 
     @agent
     def reviewer(self) -> Agent:
-        return Agent(config=self.agents_config['reviewer'], verbose=True)
-
+        return Agent(
+            config=self.agents_config['reviewer'],
+            verbose=True,
+        )
 
     @task
     def propose(self) -> Task:
@@ -31,15 +37,44 @@ class Research():
     def finalize(self) -> Task:
         return Task(config=self.tasks_config['finalize'])
 
-
     @crew
     def crew(self) -> Crew:
         """Creates the Research crew"""
 
         return Crew(
-            agents=self.agents, # Automatically created by the @agent decorator
-            tasks=self.tasks, # Automatically created by the @task decorator
+            agents=self.agents,  # Automatically created by the @agent decorator
+            tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
         )
-C
+
+
+@CrewBase
+class WeekendPlanner:
+    """Weekend planning crew"""
+
+    agents_config = 'config/agents.yaml'
+    tasks_config = 'config/tasks.yaml'
+
+    @agent
+    def weekend_planner(self) -> Agent:
+        return Agent(
+            config=self.agents_config['weekend_planner'],
+            verbose=True,
+            tools=[SerperDevTool()],
+        )
+
+    @task
+    def recommend_weekend(self) -> Task:
+        return Task(config=self.tasks_config['weekend_recommendation'])
+
+    @crew
+    def crew(self) -> Crew:
+        """Creates the Weekend planning crew"""
+
+        return Crew(
+            agents=self.agents,
+            tasks=self.tasks,
+            process=Process.sequential,
+            verbose=True,
+        )
