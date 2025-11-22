@@ -7,4 +7,5 @@ requires-python = ">=3.12"
 dependencies = [
     "crewai>=0.165.1",
     "crewai-tools>=0.62.3",
+    "googlemaps>=4.10.0",
 ]

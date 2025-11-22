@@ -1,52 +1,9 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from crewai_tools import SerperDevTool
+from tools.google_maps_tool import GoogleMapsDirectionsTool, GoogleMapsDistanceMatrixTool
+from tools.openweather_tool import OpenMeteoTool
 
-
-@CrewBase
-class Research:
-    """Research crew"""
-
-    agents_config = 'config/agents.yaml'
-    tasks_config = 'config/tasks.yaml'
-
-    @agent
-    def researcher(self) -> Agent:
-        return Agent(
-            config=self.agents_config['researcher'],
-            verbose=True,
-            tools=[SerperDevTool()],
-        )
-
-    @agent
-    def reviewer(self) -> Agent:
-        return Agent(
-            config=self.agents_config['reviewer'],
-            verbose=True,
-        )
-
-    @task
-    def propose(self) -> Task:
-        return Task(config=self.tasks_config['propose'])
-
-    @task
-    def review(self) -> Task:
-        return Task(config=self.tasks_config['review'])
-
-    @task
-    def finalize(self) -> Task:
-        return Task(config=self.tasks_config['finalize'])
-
-    @crew
-    def crew(self) -> Crew:
-        """Creates the Research crew"""
-
-        return Crew(
-            agents=self.agents,  # Automatically created by the @agent decorator
-            tasks=self.tasks,  # Automatically created by the @task decorator
-            process=Process.sequential,
-            verbose=True,
-        )
 
 
 @CrewBase
@@ -57,11 +14,23 @@ class WeekendPlanner:
     tasks_config = 'config/tasks.yaml'
 
     @agent
+    def planning_manager(self) -> Agent:
+        return Agent(
+            config=self.agents_config['planning_manager'],
+            verbose=True,
+        )
+
+    @task
+    def coordinate_planning(self) -> Task:
+        return Task(config=self.tasks_config['coordinate_planning'])
+
+    @agent
     def weather_specialist(self) -> Agent:
         return Agent(
             config=self.agents_config['weather_specialist'],
             verbose=True,
-            tools=[SerperDevTool()],
+            tools=[OpenMeteoTool(), SerperDevTool()],
+            max_retry_limit=3,
         )
 
     @task
@@ -69,22 +38,12 @@ class WeekendPlanner:
         return Task(config=self.tasks_config['fetch_weather'])
 
     @agent
-    def calendar_analyst(self) -> Agent:
-        return Agent(
-            config=self.agents_config['calendar_analyst'],
-            verbose=True,
-        )
-
-    @task
-    def analyze_calendar(self) -> Task:
-        return Task(config=self.tasks_config['analyze_calendar'])
-
-    @agent
     def local_scout(self) -> Agent:
         return Agent(
             config=self.agents_config['local_scout'],
             verbose=True,
             tools=[SerperDevTool()],
+            max_retry_limit=3,
         )
 
     @task
@@ -107,23 +66,18 @@ class WeekendPlanner:
         return Agent(
             config=self.agents_config['transport_planner'],
             verbose=True,
-            tools=[SerperDevTool()],
+            tools=[
+                SerperDevTool(),
+                GoogleMapsDirectionsTool(),
+                GoogleMapsDistanceMatrixTool(),
+            ],
+            max_retry_limit=3,
         )
+
 
     @task
     def plan_transport(self) -> Task:
         return Task(config=self.tasks_config['plan_transport'])
-
-    @agent
-    def calendar_scheduler(self) -> Agent:
-        return Agent(
-            config=self.agents_config['calendar_scheduler'],
-            verbose=True,
-        )
-
-    @task
-    def schedule_calendar_entry(self) -> Task:
-        return Task(config=self.tasks_config['schedule_calendar_entry'])
 
     @agent
     def itinerary_designer(self) -> Agent:
@@ -141,16 +95,22 @@ class WeekendPlanner:
         """Creates the Weekend planning crew"""
 
         return Crew(
-            agents=self.agents,
+            agents=[
+                self.weather_specialist(),
+                self.local_scout(),
+                self.recommendation_curator(),
+                self.transport_planner(),
+                self.itinerary_designer(),
+            ],
             tasks=[
+                self.coordinate_planning(),
                 self.fetch_weather(),
-                self.analyze_calendar(),
                 self.explore_local_options(),
                 self.craft_recommendations(),
                 self.plan_transport(),
-                self.schedule_calendar_entry(),
                 self.build_itinerary(),
             ],
-            process=Process.sequential,
+            process=Process.hierarchical,
+            manager_agent=self.planning_manager(),
             verbose=True,
         )
